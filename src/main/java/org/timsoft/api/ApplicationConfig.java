@@ -3,6 +3,6 @@ package org.timsoft.api;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
-@ApplicationPath("api") // set the path to REST web services
+@ApplicationPath("api")
 public class ApplicationConfig extends Application {
 }
