@@ -1,13 +1,12 @@
 package org.timsoft.api.test;
 
-import java.util.Optional;
-
 import javax.enterprise.context.RequestScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -23,23 +22,23 @@ import io.prometheus.client.Counter;
 @Path("monitor")
 @Produces(MediaType.APPLICATION_JSON)
 public class TestResource {
+	private static final String NOT_DEFINED = "N/D";
 
-	public static final String NOT_DEFINED = "N/D";
+	private static final String REFERER = "referer";
+	private static final String HOST = "host";
+	private static final String USER_AGENT = "user_agent";
 
-	static final Counter tests = Counter.build().name("tests_total").labelNames("userAgent", "host", "referer")
-			.help("Total requests.").register();
+	static final Counter tests = Counter.build().name("tests_total").labelNames(USER_AGENT, HOST, REFERER)
+			.help("Total tests.").register();
 	
-	static final Counter starts = Counter.build().name("starts_total").labelNames("userAgent", "host", "referer")
-			.help("Total requests.").register();
+	static final Counter starts = Counter.build().name("starts_total").labelNames(USER_AGENT, HOST, REFERER)
+			.help("Total starts.").register();
 
 	// http://localhost:8080/sample-jee7/api/monitor/test
 	@GET
 	@Path("test")
 	public Response test(@Context HttpServletRequest request) {
-		String userAgent = valueOrNotDefined(request.getHeader("User-Agent"));
-		String host = valueOrNotDefined(request.getRemoteHost());
-		String referer = valueOrNotDefined(request.getHeader("referer"));
-		tests.labels(userAgent, host, referer).inc();
+		tests.labels(getUserAgent(request), getHost(request), getReferer(request)).inc();
 		return Response.ok("Test Ok").build();
 	}
 	
@@ -47,11 +46,20 @@ public class TestResource {
 	@GET
 	@Path("start")
 	public Response start(@Context HttpServletRequest request) {
-		String userAgent = valueOrNotDefined(request.getHeader("User-Agent"));
-		String host = valueOrNotDefined(request.getRemoteHost());
-		String referer = valueOrNotDefined(request.getHeader("referer"));
-		starts.labels(userAgent, host, referer).inc();
+		starts.labels(getUserAgent(request), getHost(request), getReferer(request)).inc();
 		return Response.ok("Start Ok").build();
+	}
+
+	private String getReferer(HttpServletRequest request) {
+		return valueOrNotDefined(request.getHeader(REFERER));
+	}
+
+	private String getHost(HttpServletRequest request) {
+		return valueOrNotDefined(request.getRemoteHost());
+	}
+
+	private String getUserAgent(HttpServletRequest request) {
+		return valueOrNotDefined(request.getHeader(HttpHeaders.USER_AGENT));
 	}
 
 	private String valueOrNotDefined(String value) {
