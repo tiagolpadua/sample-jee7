@@ -19,6 +19,6 @@ import javax.ws.rs.core.Response;
 public class TestResource {
 	@GET
 	public Response test() {
-		return Response.ok("Test Ok").build();
+		return Response.ok("Test OK").build();
 	}
 }
