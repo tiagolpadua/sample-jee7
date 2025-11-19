@@ -1,52 +1,116 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.timsoft</groupId>
-	<artifactId>SampleJEE7</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.timsoft</groupId>
+  <artifactId>SampleJEE7</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>war</packaging>
 
-	<properties>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<maven.compiler.source>1.8</maven.compiler.source>
-	</properties>
+  <properties>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+  </properties>
 
-	<dependencies>
-		<!-- Full Profile -->
-		<dependency>
-			<groupId>javax</groupId>
-			<artifactId>javaee-api</artifactId>
-			<version>7.0</version>
-			<scope>provided</scope>
-		</dependency>
+  <dependencies>
+    <!-- Full Profile -->
+    <dependency>
+      <groupId>javax</groupId>
+      <artifactId>javaee-api</artifactId>
+      <version>7.0</version>
+      <scope>provided</scope>
+    </dependency>
 
-		<!-- Web Profile -->
-		<!-- <dependency> -->
-		<!-- <groupId>javax</groupId> -->
-		<!-- <artifactId>javaee-web-api</artifactId> -->
-		<!-- <version>7.0</version> -->
-		<!-- <scope>provided</scope> -->
-		<!-- </dependency> -->
+    <!-- Web Profile -->
+    <!-- <dependency> -->
+    <!-- <groupId>javax</groupId> -->
+    <!-- <artifactId>javaee-web-api</artifactId> -->
+    <!-- <version>7.0</version> -->
+    <!-- <scope>provided</scope> -->
+    <!-- </dependency> -->
 
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<version>1.18.42</version>
-			<scope>provided</scope>
-		</dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.42</version>
+      <scope>provided</scope>
+    </dependency>
 
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<version>2.3.232</version>
-			<scope>provided</scope>			<!-- GlassFish não gosta de JAR duplicado -->
-		</dependency>
+    <!-- Jackson for JSON serialization -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.jaxrs</groupId>
+      <artifactId>jackson-jaxrs-json-provider</artifactId>
+      <version>2.9.9</version>
+    </dependency>
+  </dependencies>
 
-		<!-- Jackson for JSON serialization -->
-		<dependency>
-			<groupId>com.fasterxml.jackson.jaxrs</groupId>
-			<artifactId>jackson-jaxrs-json-provider</artifactId>
-			<version>2.9.9</version>
-		</dependency>
-	</dependencies>
+  <build>
+    <plugins>
+      <!-- Spotless Maven Plugin for code formatting -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>2.27.2</version>
+        <configuration>
+          <java>
+            <!-- Use Google Java Format -->
+            <googleJavaFormat>
+              <version>1.7</version>
+              <style>GOOGLE</style>
+            </googleJavaFormat>
+
+            <!-- Remove unused imports -->
+            <removeUnusedImports/>
+
+            <!-- Format imports order -->
+            <importOrder>
+              <order>java,javax,jakarta,org,com,</order>
+            </importOrder>
+
+            <!-- Ensure newline at end of file -->
+            <endWithNewline/>
+
+            <!-- Trim trailing whitespace -->
+            <trimTrailingWhitespace/>
+
+            <!-- Include/exclude patterns -->
+            <includes>
+              <include>src/main/java/**/*.java</include>
+              <include>src/test/java/**/*.java</include>
+            </includes>
+          </java>
+
+          <!-- Format XML files (pom.xml, etc.) -->
+          <pom>
+            <includes>
+              <include>pom.xml</include>
+            </includes>
+            <sortPom>
+              <expandEmptyElements>false</expandEmptyElements>
+            </sortPom>
+          </pom>
+
+          <!-- Format other file types -->
+          <markdown>
+            <includes>
+              <include>**/*.md</include>
+            </includes>
+            <excludes>
+              <exclude>target/**</exclude>
+            </excludes>
+            <flexmark/>
+          </markdown>
+        </configuration>
+        <executions>
+          <!-- Check formatting during verify phase -->
+          <execution>
+            <id>spotless-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

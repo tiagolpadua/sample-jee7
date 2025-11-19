@@ -2,7 +2,6 @@ package org.timsoft.api.test;
 
 import java.util.Map;
 
-import javax.ejb.Stateless;
 import javax.enterprise.context.RequestScoped;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -22,13 +21,12 @@ import javax.ws.rs.core.Response;
 @Path("test")
 @Produces(MediaType.APPLICATION_JSON)
 public class TestResource {
-    @PersistenceContext
-    private EntityManager em;
+  @PersistenceContext private EntityManager em;
 
-	@GET
-	public Response test() {
-		Map<String,Object> props = em.getProperties();
-		System.out.println(props);
-		return Response.ok("Test OK").build();
-	}
+  @GET
+  public Response test() {
+    Map<String, Object> props = em.getProperties();
+    System.out.println(props);
+    return Response.ok("Test OK").build();
+  }
 }
