@@ -1,0 +1,184 @@
+name: CI/CD Pipeline - Azure Container Apps
+
+on:
+  push:
+    branches:
+      - main
+      - 112025
+  pull_request:
+    branches:
+      - main
+
+env:
+  # Azure Container Registry name (update with your ACR name)
+  ACR_NAME: bookstoreacr
+  # Azure Container Apps name (update with your app name)
+  CONTAINER_APP_NAME: bookstore-app
+  # Azure Resource Group name
+  RESOURCE_GROUP: bookstore-rg
+  # Docker image name
+  IMAGE_NAME: bookstore-api
+
+jobs:
+  # Job 1: Build and Test
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Check code formatting with Spotless
+        run: ./mvnw spotless:check
+
+      - name: Build with Maven
+        run: ./mvnw clean install -DskipTests
+
+      - name: Run tests
+        run: ./mvnw test
+
+      - name: Generate test report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Maven Tests
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
+          fail-on-error: true
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-jar
+          path: target/*.jar
+          retention-days: 1
+
+  # Job 2: Build and Push Docker Image
+  build-docker:
+    name: Build and Push Docker Image
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # Only run on push to main/112025, not on PRs
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_NAME }}.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Output image digest
+        run: echo "Image digest - ${{ steps.docker_build.outputs.digest }}"
+
+  # Job 3: Deploy to Azure Container Apps
+  deploy-azure:
+    name: Deploy to Azure Container Apps
+    needs: build-docker
+    runs-on: ubuntu-latest
+    # Only run on push to main/112025
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get current image tag
+        id: image-tag
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          containerAppName: ${{ env.CONTAINER_APP_NAME }}
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          imageToDeploy: ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ steps.image-tag.outputs.tag }}
+          targetPort: 8080
+
+      - name: Get Container App URL
+        id: get-url
+        run: |
+          APP_URL=$(az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query properties.configuration.ingress.fqdn \
+            --output tsv)
+          echo "app_url=https://$APP_URL" >> $GITHUB_OUTPUT
+          echo "### Deployment Successful! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Application URL: https://$APP_URL" >> $GITHUB_STEP_SUMMARY
+          echo "API Endpoint: https://$APP_URL/api/books" >> $GITHUB_STEP_SUMMARY
+
+      - name: Health Check
+        run: |
+          echo "Waiting for application to be ready..."
+          sleep 30
+          curl -f ${{ steps.get-url.outputs.app_url }}/actuator/health || exit 1
+          echo "Health check passed!"
+
+      - name: Azure Logout
+        if: always()
+        run: az logout
+
+  # Job 4: Notification (optional)
+  notify:
+    name: Send Notification
+    needs: [build-and-test, build-docker, deploy-azure]
+    runs-on: ubuntu-latest
+    if: always() && github.event_name == 'push'
+
+    steps:
+      - name: Deployment Status
+        run: |
+          if [ "${{ needs.deploy-azure.result }}" == "success" ]; then
+            echo "✅ Deployment completed successfully!"
+          else
+            echo "❌ Deployment failed!"
+            exit 1
+          fi

@@ -1,0 +1,28 @@
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+             version="2.1">
+    <persistence-unit name="MyPU" transaction-type="JTA">
+        <jta-data-source>jdbc/H2DS</jta-data-source>
+        
+        <!-- Explicitly list entity classes -->
+        <class>org.timsoft.api.book.Book</class>
+        
+        <properties>
+            <!-- Schema generation - create only if not exists -->
+            <property name="javax.persistence.schema-generation.database.action" value="create"/>
+            
+            <!-- EclipseLink DDL generation -->
+            <property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>
+            <property name="eclipselink.ddl-generation.output-mode" value="database"/>
+            
+            <!-- Show SQL statements in console -->
+            <property name="eclipselink.logging.level.sql" value="FINE"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+            <property name="eclipselink.logging.level" value="FINE"/>
+            
+            <!-- Hibernate equivalent (if using Hibernate) -->
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+        </properties>
+    </persistence-unit>
+</persistence>
