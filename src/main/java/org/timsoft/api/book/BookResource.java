@@ -16,6 +16,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import lombok.extern.slf4j.Slf4j;
 
 /** REST resource for Book operations. Provides endpoints for book management. */
 @RequestScoped
@@ -24,6 +25,7 @@ import io.swagger.annotations.ApiResponses;
 @Api(
     value = "Books",
     tags = {"Books"})
+@Slf4j
 public class BookResource {
 
   @Inject private BookRepository bookRepository;
@@ -36,6 +38,19 @@ public class BookResource {
     @ApiResponse(code = 304, message = "Not Modified")
   })
   public Response getAllBooks() {
+    List<Book> books = bookRepository.findAll();
+    return Response.ok(books).build();
+  }
+
+  @GET
+  @Path("no-etag")
+  @ApiOperation(
+      value = "Get all books without ETag",
+      response = Book.class,
+      responseContainer = "List")
+  @ApiResponses({@ApiResponse(code = 200, message = "List of books")})
+  public Response getAllBooksNoEtag() {
+    log.info("log.info >>> RESOURCE: getAllBooksNoEtag called <<<");
     List<Book> books = bookRepository.findAll();
     return Response.ok(books).build();
   }

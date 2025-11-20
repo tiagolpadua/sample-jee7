@@ -5,15 +5,17 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Startup;
+import javax.cache.annotation.CacheResult;
 import javax.enterprise.context.ApplicationScoped;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Repository class for Book entity operations. Provides data access methods using JPA
  * EntityManager.
  */
 @ApplicationScoped
-@Startup
+@Slf4j
 public class BookRepository {
 
   private List<Book> books;
@@ -26,7 +28,9 @@ public class BookRepository {
     books.add(new Book(3L, "The Great Gatsby", "F. Scott Fitzgerald"));
   }
 
+  @CacheResult(cacheName = "cache1Min")
   public List<Book> findAll() {
+    log.info(">>> REPOSITORY: Fetching all books from database/repository <<<");
     return books;
   }
 

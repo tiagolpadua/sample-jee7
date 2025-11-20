@@ -4,4 +4,11 @@
        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
                            http://xmlns.jcp.org/xml/ns/javaee/beans_1_1.xsd"
        bean-discovery-mode="all">
+    <!-- Explicitly enable JCache CDI interceptors from cache-annotations-ri-cdi -->
+    <interceptors>
+        <class>org.jsr107.ri.annotations.cdi.CacheResultInterceptor</class>
+        <class>org.jsr107.ri.annotations.cdi.CachePutInterceptor</class>
+        <class>org.jsr107.ri.annotations.cdi.CacheRemoveEntryInterceptor</class>
+        <class>org.jsr107.ri.annotations.cdi.CacheRemoveAllInterceptor</class>
+    </interceptors>
 </beans>
