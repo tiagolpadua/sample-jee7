@@ -21,7 +21,7 @@ public class BookRepository {
   @PostConstruct
   public void init() {
     books = new ArrayList<>();
-    books.add(new Book(1L, "1984", "George Orwell"));
+    books.add(new Book(1L, "1984xx", "George Orwell"));
     books.add(new Book(2L, "To Kill a Mockingbird", "Harper Lee"));
     books.add(new Book(3L, "The Great Gatsby", "F. Scott Fitzgerald"));
   }
